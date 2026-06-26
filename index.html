@@ -10,101 +10,83 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
 <title>MeteoMood</title>
+
+<!-- MapLibre GL -->
+<link href="https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0D1B2A;color:#fff;overflow:hidden}
 body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 
-/* SCREENS */
 .screen{display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;overflow-y:auto}
 .screen.active{display:flex}
-
-/* GRADIENT TEXT */
 .lg{background:linear-gradient(135deg,#FFD93D,#FF6B6B,#4D96FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-
-/* BUTTONS */
 .btn{width:100%;max-width:320px;padding:15px;border-radius:14px;border:none;cursor:pointer;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;-webkit-appearance:none;transition:opacity .15s,transform .1s}
 .btn:active{opacity:.75;transform:scale(.98)}
 
-/* ANIMATIONS */
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeInScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.4);opacity:0}}
-@keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
 
-/* CHECKIN GRID */
 .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:380px}
 .mbtn{background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);border-radius:18px;padding:16px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .2s;-webkit-appearance:none}
 .mbtn:active{transform:scale(.95)}
 
-/* APP SHELL */
 #app{display:none;position:fixed;inset:0;flex-direction:column}
 #app.active{display:flex}
 
-/* TOPBAR */
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;padding-top:calc(env(safe-area-inset-top) + 10px);flex-shrink:0;background:#0D1B2A;border-bottom:1px solid rgba(255,255,255,.07);min-height:50px}
-
-/* TABS */
-.tabs{display:flex;gap:3px;padding:6px 10px;flex-shrink:0;background:#0D1B2A;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;padding-top:calc(env(safe-area-inset-top) + 10px);flex-shrink:0;background:#0D1B2A;border-bottom:1px solid rgba(255,255,255,.07)}
+.tabs{display:flex;gap:3px;padding:6px 10px;flex-shrink:0;background:#0D1B2A;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tbtn{padding:7px 12px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:rgba(255,255,255,.35);white-space:nowrap;-webkit-appearance:none;transition:all .2s;flex-shrink:0}
 .tbtn.on{background:rgba(255,255,255,.13);color:#fff}
-
-/* STATUS BAR */
 #statusbar{padding:4px 14px;font-size:11px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;display:flex;align-items:center;gap:6px;min-height:24px}
 
 /* MAP */
-#mapwrap{flex:1;position:relative;overflow:hidden;cursor:grab;min-height:0;background:#091422}
-#mapwrap:active{cursor:grabbing}
-#mapsvg{width:100%;height:100%;display:block}
-#hcvs{position:absolute;inset:0;pointer-events:none;z-index:10}
+#mapwrap{flex:1;position:relative;overflow:hidden;min-height:0}
+#map{position:absolute;inset:0}
 
-/* USER LOCATION DOT */
+/* Tooltip */
+.tip{position:absolute;z-index:30;background:rgba(8,16,28,.97);border-radius:16px;padding:14px 16px;border:1px solid rgba(255,255,255,.13);box-shadow:0 10px 40px rgba(0,0,0,.8);min-width:240px;max-width:min(300px,88vw);display:none;animation:fadeInScale .2s ease;overflow-y:auto;max-height:75vh;pointer-events:auto}
+
+/* Location dot */
 #userdot{position:absolute;z-index:20;pointer-events:none;display:none;width:14px;height:14px}
 .udot-inner{width:14px;height:14px;border-radius:50%;background:#4D96FF;border:2.5px solid #fff;box-shadow:0 0 8px #4D96FF;position:relative;z-index:2}
 .udot-ping{position:absolute;inset:-8px;border-radius:50%;background:#4D96FF;opacity:.3;animation:ping 2s infinite}
 
-/* LEGEND */
-.leg{position:absolute;bottom:calc(env(safe-area-inset-bottom)+14px);left:10px;z-index:20;background:rgba(8,16,28,.93);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 14px;max-height:220px;overflow-y:auto}
+/* Legend */
+.leg{position:absolute;bottom:calc(env(safe-area-inset-bottom)+14px);left:10px;z-index:20;background:rgba(8,16,28,.93);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 14px}
 
-/* TOOLTIP */
-.tip{position:absolute;z-index:30;background:rgba(8,16,28,.97);border-radius:16px;padding:14px 16px;border:1px solid rgba(255,255,255,.13);box-shadow:0 10px 40px rgba(0,0,0,.8);min-width:240px;max-width:min(300px,88vw);display:none;animation:fadeInScale .2s ease;overflow-y:auto;max-height:75vh}
-
-/* ZOOM CONTROLS */
-.zctrl{position:absolute;top:12px;right:12px;z-index:20;display:flex;flex-direction:column;gap:4px}
-.zbtn{width:36px;height:36px;background:rgba(8,16,28,.9);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;transition:background .15s}
-.zbtn:active{background:rgba(77,150,255,.25)}
-
-/* LOCATION BUTTON */
-#locbtn{position:absolute;bottom:calc(env(safe-area-inset-bottom)+14px);right:12px;z-index:20;width:40px;height:40px;background:rgba(8,16,28,.92);border:1px solid rgba(255,255,255,.15);border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-#locbtn:active{background:rgba(77,150,255,.25)}
+/* My location btn */
+#locbtn{position:absolute;bottom:calc(env(safe-area-inset-bottom)+14px);right:12px;z-index:20;width:40px;height:40px;background:rgba(8,16,28,.92);border:1px solid rgba(255,255,255,.15);border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
 /* PANELS */
 #swrap,#mewrap,#zonewrap{display:none;overflow-y:auto;flex:1;padding:14px;padding-bottom:calc(env(safe-area-inset-bottom)+14px);-webkit-overflow-scrolling:touch}
 #swrap.on,#mewrap.on,#zonewrap.on{display:block}
-
-/* CARDS */
 .sc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px;margin-bottom:12px}
 .sc-header{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:rgba(255,255,255,.32);margin-bottom:12px;font-weight:700}
 
-/* CHECKIN GATE */
+/* Checkin gate */
 #checkin-gate{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)}
 #checkin-gate.active{display:flex}
 
-/* TOAST */
+/* Toast */
 .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom)+20px);left:50%;transform:translateX(-50%);background:rgba(30,50,80,.95);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:500;backdrop-filter:blur(10px);white-space:nowrap;animation:fadeIn .3s ease;border:1px solid rgba(255,255,255,.1)}
 
-/* LOADER / INDICATORS */
 .loader{width:12px;height:12px;border:2px solid rgba(255,255,255,.15);border-top-color:#FFD93D;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;flex-shrink:0}
 .live{width:7px;height:7px;border-radius:50%;background:#6BCB77;display:inline-block;animation:pulse-dot 2s infinite;flex-shrink:0}
 .badge-pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
 
-/* CITY LABEL */
-.city-label{pointer-events:none;user-select:none}
+/* MapLibre overrides */
+.maplibregl-ctrl-bottom-right,.maplibregl-ctrl-bottom-left{display:none}
+.maplibregl-ctrl-top-right{display:none}
+.maplibregl-canvas{cursor:grab}
+.maplibregl-canvas:active{cursor:grabbing}
 
-/* SCROLLBAR */
 *::-webkit-scrollbar{width:3px}
 *::-webkit-scrollbar-track{background:transparent}
 *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
@@ -112,11 +94,11 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div class="screen active" id="login">
   <div style="font-size:60px;margin-bottom:14px;filter:drop-shadow(0 4px 16px rgba(255,217,61,.3))">🌦️</div>
   <div class="lg" style="font-size:36px;font-weight:900;letter-spacing:-1px;margin-bottom:6px">MeteoMood</div>
-  <div style="font-size:14px;color:rgba(255,255,255,.4);max-width:260px;text-align:center;line-height:1.7;margin-bottom:8px">Il meteo degli stati d'animo.<br>Mood reale da news, Reddit e dalla tua comunità.</div>
+  <div style="font-size:14px;color:rgba(255,255,255,.4);max-width:260px;text-align:center;line-height:1.7;margin-bottom:8px">Il meteo degli stati d'animo.<br>Mood reale da news, meteo e dalla tua comunità.</div>
   <div style="font-size:11px;color:rgba(255,255,255,.22);margin-bottom:30px;text-align:center">📍 Usa la tua posizione per contribuire al mood della tua zona</div>
   <button class="btn" style="background:#fff;color:#1a1a1a" onclick="doLogin('google')">
     <span style="color:#4285F4;font-size:17px;font-weight:900">G</span> Continua con Google
@@ -132,28 +114,26 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
   </div>
 </div>
 
-<!-- ══ CHECKIN GATE ══ -->
+<!-- CHECKIN GATE -->
 <div id="checkin-gate">
   <div style="background:#0f2035;border-radius:24px;padding:28px 22px;width:100%;max-width:380px;text-align:center;animation:fadeInScale .3s ease;border:1px solid rgba(255,255,255,.07)">
     <div style="font-size:44px;margin-bottom:12px">🌦️</div>
     <div style="font-size:20px;font-weight:800;margin-bottom:8px" id="gate-title">Come ti senti oggi?</div>
     <div style="font-size:13px;color:rgba(255,255,255,.42);line-height:1.6;margin-bottom:20px" id="gate-subtitle">
-      Dicci il tuo umore per accedere alla mappa. Il tuo contributo è prezioso per la tua comunità.
+      Dicci il tuo umore per accedere alla mappa.
     </div>
     <div class="mgrid" id="gate-grid" style="margin-bottom:16px"></div>
     <button id="gate-btn" onclick="submitGateMood()" style="padding:14px 0;border-radius:50px;border:none;cursor:not-allowed;background:rgba(255,255,255,.07);color:rgba(255,255,255,.22);font-size:14px;font-weight:800;width:100%;transition:all .25s">
       Condividi e accedi
     </button>
     <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,.22)">
-      📍 Useremo la tua posizione attuale per il mood della tua zona
+      📍 Useremo la tua posizione per il mood della tua zona
     </div>
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div id="app">
-
-  <!-- TOPBAR -->
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:20px">🌦️</span>
@@ -162,12 +142,11 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
     <div style="display:flex;align-items:center;gap:6px">
       <div id="badge" style="display:none" class="badge-pill"></div>
       <div id="loc-indicator" style="display:none;padding:3px 8px;border-radius:20px;font-size:10px;background:rgba(77,150,255,.12);color:#4D96FF;border:1px solid rgba(77,150,255,.25)">📍 Live</div>
-      <div onclick="refreshAll()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.13)'" onmouseout="this.style.background='rgba(255,255,255,.07)'" title="Aggiorna">🔄</div>
+      <div onclick="refreshAll()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px" title="Aggiorna">🔄</div>
       <div id="av" style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#4D96FF,#7B68EE);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">?</div>
     </div>
   </div>
 
-  <!-- TABS -->
   <div class="tabs">
     <button class="tbtn on" onclick="swTab('map',this)">🗺️ Mappa</button>
     <button class="tbtn" onclick="swTab('zone',this)">📍 La mia zona</button>
@@ -175,173 +154,24 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
     <button class="tbtn" onclick="swTab('me',this)">👤 Il mio mood</button>
   </div>
 
-  <!-- STATUS BAR -->
   <div id="statusbar">
     <span class="live"></span>
     <span id="stxt">Inizializzazione...</span>
   </div>
 
-  <!-- ══ MAPPA ══ -->
+  <!-- MAPPA -->
   <div id="mapwrap">
-    <svg id="mapsvg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <!-- Ocean background -->
-      <defs>
-        <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:#091830"/>
-          <stop offset="100%" style="stop-color:#061020"/>
-        </linearGradient>
-      </defs>
-      <rect width="1000" height="500" fill="url(#oceanGrad)"/>
-
-      <!-- Grid lines -->
-      <g stroke="rgba(100,160,255,0.04)" stroke-width="0.5">
-        <line x1="0" y1="83" x2="1000" y2="83"/>
-        <line x1="0" y1="167" x2="1000" y2="167"/>
-        <line x1="0" y1="333" x2="1000" y2="333"/>
-        <line x1="0" y1="417" x2="1000" y2="417"/>
-        <line x1="167" y1="0" x2="167" y2="500"/>
-        <line x1="333" y1="0" x2="333" y2="500"/>
-        <line x1="500" y1="0" x2="500" y2="500"/>
-        <line x1="667" y1="0" x2="667" y2="500"/>
-        <line x1="833" y1="0" x2="833" y2="500"/>
-      </g>
-      <!-- Equator -->
-      <line x1="0" y1="250" x2="1000" y2="250" stroke="rgba(100,160,255,0.09)" stroke-width="1" stroke-dasharray="4,8"/>
-      <!-- Tropic lines -->
-      <line x1="0" y1="207" x2="1000" y2="207" stroke="rgba(255,200,100,0.05)" stroke-width="0.7" stroke-dasharray="3,10"/>
-      <line x1="0" y1="293" x2="1000" y2="293" stroke="rgba(255,200,100,0.05)" stroke-width="0.7" stroke-dasharray="3,10"/>
-
-      <!-- ══ CONTINENTS (redrawn with better accuracy) ══ -->
-      <g fill="#152840" stroke="#1e3d5c" stroke-width="0.8" stroke-linejoin="round">
-
-        <!-- NORTH AMERICA -->
-        <path d="M75,48 L92,44 L112,42 L135,44 L152,48 L168,54 L178,62 L185,72 L188,85 L185,100 L178,115 L172,128 L168,142 L162,158 L158,175 L152,192 L145,208 L138,222 L130,235 L120,248 L110,258 L100,264 L90,262 L78,256 L68,245 L58,230 L50,212 L44,192 L42,170 L44,148 L50,125 L58,103 L66,80 Z"/>
-        <!-- Florida -->
-        <path d="M120,248 L128,252 L132,262 L128,272 L120,275 L114,268 L112,258 Z"/>
-        <!-- Greenland -->
-        <path d="M318,24 L345,18 L372,20 L392,28 L402,42 L398,58 L382,70 L360,76 L338,70 L320,58 L312,44 Z"/>
-        <!-- Iceland -->
-        <path d="M390,54 L404,50 L414,56 L410,66 L396,68 L388,62 Z"/>
-        <!-- Cuba / Caribbean area -->
-        <path d="M148,272 L165,268 L178,272 L182,280 L174,286 L158,284 L148,278 Z"/>
-        <!-- Central America connector -->
-        <path d="M130,235 L148,232 L158,240 L154,252 L142,255 L130,248 Z"/>
-        <!-- Mexico -->
-        <path d="M58,175 L80,168 L105,165 L128,168 L142,178 L148,192 L142,208 L128,218 L110,222 L92,218 L76,208 L64,195 Z"/>
-
-        <!-- SOUTH AMERICA -->
-        <path d="M158,272 L178,262 L198,258 L218,260 L232,270 L240,285 L245,305 L248,328 L246,355 L240,382 L230,405 L218,420 L204,428 L190,422 L178,410 L165,392 L156,368 L150,342 L148,315 L150,292 Z"/>
-
-        <!-- EUROPE -->
-        <path d="M430,62 L448,58 L465,60 L478,68 L485,80 L482,92 L472,100 L458,105 L442,102 L430,94 L424,80 Z"/>
-        <!-- Iberian Peninsula -->
-        <path d="M418,92 L436,88 L450,94 L454,108 L448,120 L432,126 L418,118 L412,104 Z"/>
-        <!-- France/Benelux -->
-        <path d="M450,75 L470,70 L485,75 L490,88 L482,96 L466,98 L450,92 Z"/>
-        <!-- Britain -->
-        <path d="M435,58 L448,52 L458,56 L456,68 L445,72 L435,66 Z"/>
-        <!-- Scandinavia -->
-        <path d="M470,30 L485,24 L500,26 L512,34 L515,48 L508,62 L492,68 L476,64 L466,52 Z"/>
-        <path d="M482,26 L492,18 L502,20 L506,30 L498,36 L484,32 Z"/>
-        <!-- Main Europe block -->
-        <path d="M438,96 L470,90 L498,88 L520,92 L535,102 L540,118 L535,135 L520,148 L500,155 L478,152 L456,142 L440,128 L432,112 Z"/>
-        <!-- Italy -->
-        <path d="M478,118 L495,112 L505,122 L502,140 L490,158 L476,168 L466,160 L462,142 L465,126 Z"/>
-        <!-- Greece -->
-        <path d="M508,128 L520,122 L528,132 L522,145 L510,150 L502,142 Z"/>
-
-        <!-- AFRICA -->
-        <path d="M440,128 L468,122 L495,125 L515,132 L528,145 L535,165 L538,190 L535,218 L525,248 L512,272 L496,290 L478,298 L460,292 L444,278 L432,258 L425,232 L422,205 L425,178 L432,152 Z"/>
-        <!-- Madagascar -->
-        <path d="M545,268 L555,260 L562,268 L560,285 L548,290 L540,282 Z"/>
-
-        <!-- ASIA - main block -->
-        <path d="M508,40 L560,32 L625,28 L700,30 L760,34 L810,40 L845,50 L858,62 L850,76 L825,88 L790,95 L750,98 L708,96 L665,92 L625,88 L585,84 L548,78 L520,72 L508,58 Z"/>
-        <!-- Arabian Peninsula -->
-        <path d="M535,158 L555,148 L575,148 L590,158 L594,175 L585,192 L568,200 L550,196 L536,180 Z"/>
-        <!-- Indian Subcontinent -->
-        <path d="M575,115 L600,108 L622,112 L632,128 L628,150 L618,170 L602,185 L585,188 L570,175 L560,155 L558,132 Z"/>
-        <!-- Southeast Asia -->
-        <path d="M625,90 L660,85 L688,90 L700,105 L692,120 L672,128 L650,122 L632,108 Z"/>
-        <!-- Japan -->
-        <path d="M790,78 L800,72 L808,78 L804,90 L794,94 L786,88 Z"/>
-        <path d="M800,62 L808,56 L816,60 L814,72 L804,74 L796,68 Z"/>
-        <!-- Korean Peninsula -->
-        <path d="M765,80 L775,74 L782,80 L778,92 L768,96 L760,88 Z"/>
-        <!-- China Indochina -->
-        <path d="M650,120 L680,112 L705,115 L718,128 L714,145 L698,158 L678,162 L658,152 L645,135 Z"/>
-        <!-- Middle East -->
-        <path d="M520,108 L548,100 L570,105 L582,118 L575,132 L558,138 L535,132 L520,120 Z"/>
-        <!-- Turkey -->
-        <path d="M505,92 L535,86 L558,90 L568,102 L560,112 L538,116 L512,110 L502,100 Z"/>
-        <!-- Russia far east extension -->
-        <path d="M750,35 L800,30 L840,34 L858,44 L852,56 L825,60 L785,58 L750,50 Z"/>
-
-        <!-- AUSTRALIA -->
-        <path d="M720,305 L765,295 L808,295 L842,305 L860,322 L862,345 L852,368 L832,385 L808,392 L780,388 L754,375 L734,355 L720,330 Z"/>
-        <!-- New Zealand (simplified) -->
-        <path d="M878,355 L885,345 L892,350 L890,365 L882,368 Z"/>
-        <path d="M882,370 L889,362 L895,368 L891,380 L882,382 Z"/>
-
-        <!-- JAPAN large islands -->
-        <path d="M782,70 L796,62 L808,65 L808,78 L796,84 L782,80 Z"/>
-
-        <!-- Philippines -->
-        <path d="M725,148 L732,140 L740,145 L738,158 L728,162 L720,155 Z"/>
-        <path d="M735,162 L742,156 L748,162 L745,172 L736,174 L730,168 Z"/>
-
-        <!-- Indonesia (main) -->
-        <path d="M672,200 L710,192 L742,195 L755,208 L748,220 L720,225 L688,220 L670,210 Z"/>
-        <path d="M748,205 L775,200 L792,208 L788,220 L768,225 L748,218 Z"/>
-
-        <!-- Sri Lanka -->
-        <path d="M614,188 L620,182 L626,188 L622,198 L614,198 Z"/>
-      </g>
-
-      <!-- Antarctica hint -->
-      <path d="M0,485 Q250,478 500,482 Q750,478 1000,485 L1000,500 L0,500 Z" fill="#152840" opacity="0.6"/>
-
-      <!-- City layer (populated by JS) -->
-      <g id="city-layer"></g>
-      <!-- Label layer -->
-      <g id="label-layer"></g>
-    </svg>
-
-    <canvas id="hcvs"></canvas>
-    <div id="userdot">
-      <div class="udot-ping"></div>
-      <div class="udot-inner"></div>
-    </div>
+    <div id="map"></div>
+    <div id="userdot"><div class="udot-ping"></div><div class="udot-inner"></div></div>
     <div class="tip" id="tip"></div>
-
-    <!-- ZOOM CONTROLS -->
-    <div class="zctrl">
-      <button class="zbtn" onclick="doZoom(1.3)" title="Zoom in">+</button>
-      <button class="zbtn" onclick="doZoom(0.77)" title="Zoom out">−</button>
-      <button class="zbtn" onclick="resetView()" style="font-size:12px" title="Vista globale">⌂</button>
-    </div>
-
-    <!-- MY LOCATION -->
     <button id="locbtn" onclick="centerOnUser()" title="La mia posizione">📍</button>
-
-    <!-- LEGEND -->
     <div class="leg" id="leg"></div>
   </div>
 
-  <!-- ══ LA MIA ZONA ══ -->
-  <div id="zonewrap">
-    <div id="zonecontent"></div>
-  </div>
-
-  <!-- ══ STATISTICHE ══ -->
+  <div id="zonewrap"><div id="zonecontent"></div></div>
   <div id="swrap"></div>
-
-  <!-- ══ IL MIO MOOD ══ -->
-  <div id="mewrap">
-    <div id="mecontent"></div>
-  </div>
-
-</div><!-- /app -->
+  <div id="mewrap"><div id="mecontent"></div></div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════
@@ -349,31 +179,29 @@ body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bot
 // ══════════════════════════════════════════════
 const SUPABASE_URL = 'https://rcyxndnpsjaznztlnqcl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_TRn3s2OtqJOI7Q_LSanglw_n3tD2Dt3';
+const MAPTILER_KEY = 'MTJKphB5l4JdIfPVTSiC';
 const API_BASE = window.location.origin;
 
 // ══════════════════════════════════════════════
 // MOODS
 // ══════════════════════════════════════════════
 const MOODS = [
-  {id:'sunny',  emoji:'☀️', label:'Raggiante',       color:'#FFD93D', light:'rgba(255,217,61,.16)'},
-  {id:'rainbow',emoji:'🌈', label:'Euforico',         color:'#FF6B6B', light:'rgba(255,107,107,.16)'},
-  {id:'cloudy', emoji:'⛅', label:'Così così',        color:'#90B8D4', light:'rgba(144,184,212,.16)'},
-  {id:'rainy',  emoji:'🌧️',label:'Giù di corda',     color:'#5B8DB8', light:'rgba(91,141,184,.16)'},
-  {id:'stormy', emoji:'⛈️',label:'Tempestoso',       color:'#7B68EE', light:'rgba(123,104,238,.16)'},
-  {id:'snowy',  emoji:'❄️', label:'Freddo/distante',  color:'#A8D8EA', light:'rgba(168,216,234,.16)'},
+  {id:'sunny',  emoji:'☀️', label:'Raggiante',      color:'#FFD93D', light:'rgba(255,217,61,.16)'},
+  {id:'rainbow',emoji:'🌈', label:'Euforico',        color:'#FF6B6B', light:'rgba(255,107,107,.16)'},
+  {id:'cloudy', emoji:'⛅', label:'Così così',       color:'#90B8D4', light:'rgba(144,184,212,.16)'},
+  {id:'rainy',  emoji:'🌧️',label:'Giù di corda',    color:'#5B8DB8', light:'rgba(91,141,184,.16)'},
+  {id:'stormy', emoji:'⛈️',label:'Tempestoso',      color:'#7B68EE', light:'rgba(123,104,238,.16)'},
+  {id:'snowy',  emoji:'❄️', label:'Freddo/distante', color:'#A8D8EA', light:'rgba(168,216,234,.16)'},
 ];
 const gm = id => MOODS.find(m => m.id === id) || MOODS[2];
 
-// ══════════════════════════════════════════════
-// COORDINATE CONVERSION
-// ══════════════════════════════════════════════
-const ll2xy = (lat, lng) => ({
-  x: (lng + 180) / 360 * 1000,
-  y: (90 - lat) / 180 * 500
-});
+const MOOD_COLORS = {
+  sunny:'#FFD93D', rainbow:'#FF6B6B', cloudy:'#90B8D4',
+  rainy:'#5B8DB8', stormy:'#7B68EE', snowy:'#A8D8EA'
+};
 
 // ══════════════════════════════════════════════
-// CITIES (57 città)
+// CITIES
 // ══════════════════════════════════════════════
 const CITIES = [
   {name:'Milano',f:'🇮🇹',lat:45.46,lng:9.19},
@@ -433,48 +261,15 @@ const CITIES = [
   {name:'Ho Chi Minh',f:'🇻🇳',lat:10.82,lng:106.63},
   {name:'Sydney',f:'🇦🇺',lat:-33.87,lng:151.21},
   {name:'Melbourne',f:'🇦🇺',lat:-37.81,lng:144.96},
-].map(c => ({...c, mood:'cloudy', n:0, summary:'', sources:{}, loaded:false, score:50, user_checkins:0, user_weight:0}));
+].map(c => ({...c, mood:'cloudy', score:50, summary:'', sources:{}, loaded:false, user_checkins:0, user_weight:0}));
 
-// ══════════════════════════════════════════════
-// PLACES RECOMMENDATIONS
-// ══════════════════════════════════════════════
 const PLACES = {
-  sunny:[
-    {cat:'☕ Bar',name:"Terrazza all'aperto",type:'friendly',why:'Atmosfera positiva'},
-    {cat:'🌿 Parchi',name:'Giardini pubblici',type:'friendly',why:"Perfetto per l'aria aperta"},
-    {cat:'🎵 Musica',name:'Live music / Jazz',type:'friendly',why:"Condividi l'energia"},
-    {cat:'⚠️ Evita',name:'Luoghi chiusi e bui',type:'hostile',why:'Sprecheresti la giornata'},
-  ],
-  rainbow:[
-    {cat:'🎉 Locali',name:'Rooftop Bar',type:'friendly',why:"Perfetto per l'euforia"},
-    {cat:'🎨 Arte',name:'Galleria / Opening',type:'friendly',why:"Canalizza l'energia"},
-    {cat:'🕺 Club',name:'Discoteca',type:'friendly',why:'Balla e celebra'},
-    {cat:'⚠️ Nota',name:'Luoghi silenziosi',type:'neutral',why:'Potresti sembrare fuori contesto'},
-  ],
-  cloudy:[
-    {cat:'☕ Bar',name:'Caffetteria tranquilla',type:'neutral',why:'Nessuna pressione'},
-    {cat:'📚 Libri',name:'Biblioteca',type:'neutral',why:'Silenzio e riflessione'},
-    {cat:'🎬 Cinema',name:'Cinema',type:'neutral',why:'Distrazione sana'},
-    {cat:'🍜 Food',name:'Trattoria / Ramen',type:'friendly',why:'Comfort food'},
-  ],
-  rainy:[
-    {cat:'📚 Libri',name:'Libreria con angolo',type:'friendly',why:'Rifugio sicuro'},
-    {cat:'🏊 Spa',name:'Centro benessere',type:'friendly',why:'Rilassa corpo e mente'},
-    {cat:'🎵 Musica',name:'Viniloteca',type:'neutral',why:'Musica come terapia'},
-    {cat:'⚠️ Evita',name:'Locali affollati',type:'hostile',why:'Peggiora la sensazione'},
-  ],
-  stormy:[
-    {cat:'🏋️ Sport',name:'Palestra / Boxe',type:'friendly',why:'Sfoga la tensione'},
-    {cat:'🏊 Spa',name:'Sauna / Hammam',type:'friendly',why:'Reset fisico e mentale'},
-    {cat:'⚠️ Evita',name:'Locali notturni',type:'hostile',why:'Alta probabilità di tensioni'},
-    {cat:'⚠️ Evita',name:'Centri commerciali',type:'hostile',why:'Stimoli eccessivi'},
-  ],
-  snowy:[
-    {cat:'☕ Bar',name:'Caffè caldo',type:'friendly',why:'Calore che rompe la distanza'},
-    {cat:'🎨 Arte',name:'Museo',type:'neutral',why:'Connessione intellettuale'},
-    {cat:'📚 Libri',name:'Libreria accogliente',type:'friendly',why:'Invita al contatto umano'},
-    {cat:'⚠️ Evita',name:'Spazi anonimi',type:'hostile',why:"Amplificano l'isolamento"},
-  ],
+  sunny:[{cat:'☕ Bar',name:"Terrazza all'aperto",type:'friendly',why:'Atmosfera positiva'},{cat:'🌿 Parchi',name:'Giardini pubblici',type:'friendly',why:"Perfetto per l'aria aperta"},{cat:'🎵 Musica',name:'Live music / Jazz',type:'friendly',why:"Condividi l'energia"},{cat:'⚠️ Evita',name:'Luoghi chiusi e bui',type:'hostile',why:'Sprecheresti la giornata'}],
+  rainbow:[{cat:'🎉 Locali',name:'Rooftop Bar',type:'friendly',why:"Perfetto per l'euforia"},{cat:'🎨 Arte',name:'Galleria / Opening',type:'friendly',why:"Canalizza l'energia"},{cat:'🕺 Club',name:'Discoteca',type:'friendly',why:'Balla e celebra'},{cat:'⚠️ Nota',name:'Luoghi silenziosi',type:'neutral',why:'Potresti sembrare fuori contesto'}],
+  cloudy:[{cat:'☕ Bar',name:'Caffetteria tranquilla',type:'neutral',why:'Nessuna pressione'},{cat:'📚 Libri',name:'Biblioteca',type:'neutral',why:'Silenzio e riflessione'},{cat:'🎬 Cinema',name:'Cinema',type:'neutral',why:'Distrazione sana'},{cat:'🍜 Food',name:'Trattoria / Ramen',type:'friendly',why:'Comfort food'}],
+  rainy:[{cat:'📚 Libri',name:'Libreria con angolo',type:'friendly',why:'Rifugio sicuro'},{cat:'🏊 Spa',name:'Centro benessere',type:'friendly',why:'Rilassa corpo e mente'},{cat:'🎵 Musica',name:'Viniloteca',type:'neutral',why:'Musica come terapia'},{cat:'⚠️ Evita',name:'Locali affollati',type:'hostile',why:'Peggiora la sensazione'}],
+  stormy:[{cat:'🏋️ Sport',name:'Palestra / Boxe',type:'friendly',why:'Sfoga la tensione'},{cat:'🏊 Spa',name:'Sauna / Hammam',type:'friendly',why:'Reset fisico e mentale'},{cat:'⚠️ Evita',name:'Locali notturni',type:'hostile',why:'Alta probabilità di tensioni'},{cat:'⚠️ Evita',name:'Centri commerciali',type:'hostile',why:'Stimoli eccessivi'}],
+  snowy:[{cat:'☕ Bar',name:'Caffè caldo',type:'friendly',why:'Calore che rompe la distanza'},{cat:'🎨 Arte',name:'Museo',type:'neutral',why:'Connessione intellettuale'},{cat:'📚 Libri',name:'Libreria accogliente',type:'friendly',why:'Invita al contatto umano'},{cat:'⚠️ Evita',name:'Spazi anonimi',type:'hostile',why:"Amplificano l'isolamento"}],
 };
 const TC = {friendly:'#6BCB77', neutral:'#FFD93D', hostile:'#FF6B6B'};
 const TL = {friendly:'✅ Friendly', neutral:'⚪ Neutro', hostile:'⚠️ Ostile'};
@@ -485,50 +280,28 @@ const TL = {friendly:'✅ Friendly', neutral:'⚪ Neutro', hostile:'⚠️ Ostil
 let userMood = null, gateMood = null, userId = null;
 let userLat = null, userLng = null, locationWatcher = null;
 let moodHistory = [], checkinNotifScheduled = false;
-let vb = {x:0, y:0, w:1000, h:500};
-let dragging = false, dragStart = null, vbStart = null;
-let lastTouchDist = null;
+let map = null, markers = [];
 let lastCheckinLat = null, lastCheckinLng = null;
 
 // ══════════════════════════════════════════════
 // SERVICE WORKER
 // ══════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 
 // ══════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════
-const ll2screen = (lat, lng) => {
-  const p = ll2xy(lat, lng);
-  const wrap = document.getElementById('mapwrap');
-  const r = wrap.getBoundingClientRect();
-  return {
-    x: (p.x - vb.x) / vb.w * r.width,
-    y: (p.y - vb.y) / vb.h * r.height
-  };
-};
-
 function showToast(msg, duration = 2500) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
+  t.className = 'toast'; t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), duration);
 }
-
-function todayKey() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function hasCheckedInToday() {
-  return localStorage.getItem('last_checkin_date') === todayKey();
-}
-
+function todayKey() { return new Date().toISOString().split('T')[0]; }
+function hasCheckedInToday() { return localStorage.getItem('last_checkin_date') === todayKey(); }
 function markCheckedInToday(mood) {
   localStorage.setItem('last_checkin_date', todayKey());
   localStorage.setItem('last_mood', mood);
@@ -538,26 +311,17 @@ function markCheckedInToday(mood) {
   localStorage.setItem('mood_history', JSON.stringify(h));
   moodHistory = h;
 }
-
-function h2rgb(hex) {
-  return [
-    parseInt(hex.slice(1,3), 16),
-    parseInt(hex.slice(3,5), 16),
-    parseInt(hex.slice(5,7), 16)
-  ];
-}
+function setStatus(html) { document.getElementById('stxt').innerHTML = html; }
 
 // ══════════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════════
 function doLogin(provider) {
-  userId = localStorage.getItem('user_id') ||
-    'user_' + Math.random().toString(36).substr(2, 9);
+  userId = localStorage.getItem('user_id') || 'user_' + Math.random().toString(36).substr(2,9);
   localStorage.setItem('user_id', userId);
   localStorage.setItem('login_provider', provider);
   moodHistory = JSON.parse(localStorage.getItem('mood_history') || '[]');
   document.getElementById('login').classList.remove('active');
-
   if (hasCheckedInToday()) {
     userMood = localStorage.getItem('last_mood') || 'cloudy';
     enterApp();
@@ -573,82 +337,64 @@ function showCheckinGate(isUpdate = false) {
   gateMood = null;
   const grid = document.getElementById('gate-grid');
   grid.innerHTML = '';
-
-  document.getElementById('gate-title').textContent = isUpdate
-    ? 'Come ti senti adesso?' : 'Come ti senti oggi?';
-  document.getElementById('gate-subtitle').textContent = isUpdate
-    ? 'Aggiorna il tuo mood. Il tuo contributo aiuta la comunità.'
-    : 'Dicci il tuo umore per accedere alla mappa.';
-
+  document.getElementById('gate-title').textContent = isUpdate ? 'Come ti senti adesso?' : 'Come ti senti oggi?';
   MOODS.forEach(m => {
     const b = document.createElement('button');
-    b.className = 'mbtn';
-    b.dataset.id = m.id;
+    b.className = 'mbtn'; b.dataset.id = m.id;
     b.innerHTML = `<span style="font-size:30px">${m.emoji}</span><span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-align:center;line-height:1.2">${m.label}</span>`;
     b.onclick = () => selectGateMood(m.id);
     grid.appendChild(b);
   });
-
   const gb = document.getElementById('gate-btn');
   gb.style.background = 'rgba(255,255,255,.07)';
   gb.style.color = 'rgba(255,255,255,.22)';
   gb.style.cursor = 'not-allowed';
   gb.textContent = isUpdate ? 'Aggiorna mood' : 'Condividi e accedi';
-
   document.getElementById('checkin-gate').classList.add('active');
 }
 
 function selectGateMood(id) {
   gateMood = id;
   document.querySelectorAll('#gate-grid .mbtn').forEach(btn => {
-    const bm = gm(btn.dataset.id);
-    const sel = btn.dataset.id === id;
+    const bm = gm(btn.dataset.id), sel = btn.dataset.id === id;
     btn.style.background = sel ? bm.light : 'rgba(255,255,255,.05)';
     btn.style.borderColor = sel ? bm.color : 'rgba(255,255,255,.1)';
     btn.querySelector('span:last-child').style.color = sel ? bm.color : 'rgba(255,255,255,.4)';
-    if (sel) btn.style.transform = 'scale(1.04)';
-    else btn.style.transform = '';
+    btn.style.transform = sel ? 'scale(1.04)' : '';
   });
   const m = gm(id);
   const gb = document.getElementById('gate-btn');
   gb.style.background = `linear-gradient(135deg,${m.color},#4D96FF)`;
-  gb.style.color = '#0D1B2A';
-  gb.style.cursor = 'pointer';
+  gb.style.color = '#0D1B2A'; gb.style.cursor = 'pointer';
 }
 
 async function submitGateMood() {
   if (!gateMood) return;
   userMood = gateMood;
   markCheckedInToday(userMood);
-
-  // Update badge immediately
-  const m = gm(userMood);
-  const badge = document.getElementById('badge');
-  if (badge) {
-    badge.style.display = 'inline-flex';
-    badge.textContent = `${m.emoji} ${m.label}`;
-    badge.style.background = m.light;
-    badge.style.border = `1px solid ${m.color}44`;
-    badge.style.color = m.color;
-  }
-
   document.getElementById('checkin-gate').classList.remove('active');
-
+  const m = gm(userMood);
+  updateBadge(m);
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(async pos => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
+      userLat = pos.coords.latitude; userLng = pos.coords.longitude;
       await saveCheckin(userMood, userLat, userLng);
       startLocationTracking();
       document.getElementById('loc-indicator').style.display = 'block';
     }, () => {});
   }
-
-  if (!document.getElementById('app').classList.contains('active')) {
-    enterApp();
-  }
+  if (!document.getElementById('app').classList.contains('active')) enterApp();
   scheduleNextCheckin();
   showToast(`${m.emoji} Mood registrato: ${m.label}`);
+}
+
+function updateBadge(m) {
+  const badge = document.getElementById('badge');
+  badge.style.display = 'inline-flex';
+  badge.textContent = `${m.emoji} ${m.label}`;
+  badge.style.background = m.light;
+  badge.style.border = `1px solid ${m.color}44`;
+  badge.style.color = m.color;
 }
 
 // ══════════════════════════════════════════════
@@ -656,108 +402,67 @@ async function submitGateMood() {
 // ══════════════════════════════════════════════
 function startLocationTracking() {
   if (!navigator.geolocation || locationWatcher) return;
-  locationWatcher = navigator.geolocation.watchPosition(
-    pos => {
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      updateUserDot();
-    },
-    null,
-    {enableHighAccuracy: true, maximumAge: 30000}
-  );
+  locationWatcher = navigator.geolocation.watchPosition(pos => {
+    userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+    updateUserDot();
+  }, null, {enableHighAccuracy: true, maximumAge: 30000});
 }
 
 function updateUserDot() {
-  if (!userLat || !userLng) return;
-  const sc = ll2screen(userLat, userLng);
+  if (!userLat || !userLng || !map) return;
+  const pt = map.project([userLng, userLat]);
   const dot = document.getElementById('userdot');
   dot.style.display = 'block';
-  dot.style.left = (sc.x - 7) + 'px';
-  dot.style.top = (sc.y - 7) + 'px';
+  dot.style.left = (pt.x - 7) + 'px';
+  dot.style.top = (pt.y - 7) + 'px';
 }
 
 function centerOnUser() {
-  if (!userLat || !userLng) {
-    showToast('📍 Posizione non disponibile');
-    return;
-  }
-  const p = ll2xy(userLat, userLng);
-  vb.w = 200; vb.h = 100;
-  vb.x = Math.max(0, Math.min(1000 - vb.w, p.x - vb.w / 2));
-  vb.y = Math.max(0, Math.min(500 - vb.h, p.y - vb.h / 2));
-  setVB(); renderCities(); updateUserDot();
+  if (!userLat || !userLng) { showToast('📍 Posizione non disponibile'); return; }
+  map.flyTo({center: [userLng, userLat], zoom: 12, duration: 1000});
 }
 
 // ══════════════════════════════════════════════
-// CHECK-IN PERIODICO (ogni 6 ore)
+// CHECKIN PERIODICO
 // ══════════════════════════════════════════════
 function scheduleNextCheckin() {
   if (checkinNotifScheduled) return;
   checkinNotifScheduled = true;
-  const SIX_HOURS = 6 * 60 * 60 * 1000;
-
+  const SIX_H = 6 * 60 * 60 * 1000;
   if ('serviceWorker' in navigator && Notification.permission === 'granted') {
     navigator.serviceWorker.ready.then(sw => {
-      sw.active?.postMessage({
-        type: 'SCHEDULE_ALARM',
-        time: Date.now() + SIX_HOURS,
-        label: 'Come ti senti adesso? Aggiorna il tuo mood 🌦️'
-      });
+      sw.active?.postMessage({type:'SCHEDULE_ALARM', time: Date.now()+SIX_H, label:'Come ti senti adesso? Aggiorna il tuo mood 🌦️'});
     });
   }
-
-  setTimeout(() => {
-    checkinNotifScheduled = false;
-    if (document.visibilityState === 'visible') {
-      showCheckinGate(true);
-    }
-  }, SIX_HOURS);
+  setTimeout(() => { checkinNotifScheduled = false; if (document.visibilityState==='visible') showCheckinGate(true); }, SIX_H);
 }
 
 // ══════════════════════════════════════════════
-// SUPABASE — SALVA CHECKIN
+// SUPABASE CHECKIN
 // ══════════════════════════════════════════════
 async function saveCheckin(mood, lat, lng) {
   if (!lat || !lng) return;
   try {
-    // Prima prova via Netlify Function
     const r = await fetch(`${API_BASE}/.netlify/functions/mood`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({mood, lat, lng, user_id: userId || 'anonymous'})
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mood, lat, lng, user_id: userId||'anonymous'})
     });
     if (r.ok) return;
   } catch(e) {}
-  // Fallback diretto Supabase
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/checkins`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        mood, lat, lng,
-        user_id: userId || 'anonymous',
-        created_at: new Date().toISOString()
-      })
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify({mood, lat, lng, user_id: userId||'anonymous', created_at: new Date().toISOString()})
     });
   } catch(e) {}
 }
 
-// Aggiorna posizione ogni 5 minuti se spostato >500m
 setInterval(async () => {
-  if (!userLat || !userLng || !userMood) return;
-  const dist = lastCheckinLat
-    ? Math.abs(userLat - lastCheckinLat) + Math.abs(userLng - lastCheckinLng)
-    : 999;
-  if (dist > 0.005) {
-    await saveCheckin(userMood, userLat, userLng);
-    lastCheckinLat = userLat; lastCheckinLng = userLng;
-  }
-}, 5 * 60 * 1000);
+  if (!userLat||!userLng||!userMood) return;
+  const dist = lastCheckinLat ? Math.abs(userLat-lastCheckinLat)+Math.abs(userLng-lastCheckinLng) : 999;
+  if (dist > 0.005) { await saveCheckin(userMood,userLat,userLng); lastCheckinLat=userLat; lastCheckinLng=userLng; }
+}, 5*60*1000);
 
 // ══════════════════════════════════════════════
 // ENTER APP
@@ -765,47 +470,171 @@ setInterval(async () => {
 function enterApp() {
   document.getElementById('login').classList.remove('active');
   document.getElementById('app').classList.add('active');
-
-  const m = gm(userMood);
-  const badge = document.getElementById('badge');
-  badge.style.display = 'inline-flex';
-  badge.textContent = `${m.emoji} ${m.label}`;
-  badge.style.background = m.light;
-  badge.style.border = `1px solid ${m.color}44`;
-  badge.style.color = m.color;
-
+  updateBadge(gm(userMood));
   const provider = localStorage.getItem('login_provider');
-  document.getElementById('av').textContent =
-    provider === 'google' ? 'G' : provider === 'apple' ? '' : '?';
-
+  document.getElementById('av').textContent = provider==='google'?'G':provider==='apple'?'':'?';
   setTimeout(() => { initMap(); fetchAllCities(); }, 200);
-
-  if (Notification.permission === 'default') {
-    setTimeout(() => Notification.requestPermission(), 4000);
-  }
+  if (Notification.permission==='default') setTimeout(()=>Notification.requestPermission(), 4000);
 }
 
 // ══════════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════════
 function swTab(tab, btn) {
-  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   const panels = {map:'mapwrap', zone:'zonewrap', stats:'swrap', me:'mewrap'};
-  Object.entries(panels).forEach(([key, id]) => {
+  Object.entries(panels).forEach(([key,id]) => {
     const el = document.getElementById(id);
-    if (key === tab) {
-      el.style.display = key === 'map' ? '' : 'block';
-      if (key !== 'map') el.classList.add('on');
-    } else {
-      el.style.display = 'none';
-      el.classList.remove('on');
-    }
+    if (key===tab) { el.style.display=key==='map'?'':'block'; if(key!=='map') el.classList.add('on'); }
+    else { el.style.display='none'; el.classList.remove('on'); }
   });
-  if (tab === 'map') { setTimeout(drawHeat, 50); }
-  else if (tab === 'zone') buildZone();
-  else if (tab === 'stats') buildStats();
-  else if (tab === 'me') buildMe();
+  if (tab==='map' && map) { setTimeout(()=>map.resize(),50); }
+  else if (tab==='zone') buildZone();
+  else if (tab==='stats') buildStats();
+  else if (tab==='me') buildMe();
+}
+
+// ══════════════════════════════════════════════
+// MAPLIBRE GL INIT
+// ══════════════════════════════════════════════
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`,
+    center: [15, 20],
+    zoom: 1.8,
+    minZoom: 1,
+    maxZoom: 14,
+    attributionControl: false,
+  });
+
+  map.on('load', () => {
+    // Aggiunge sorgente dati vuota per le città
+    map.addSource('cities', {
+      type: 'geojson',
+      data: citiesToGeoJSON()
+    });
+
+    // Layer heatmap
+    map.addLayer({
+      id: 'mood-heat',
+      type: 'heatmap',
+      source: 'cities',
+      maxzoom: 8,
+      paint: {
+        'heatmap-weight': ['interpolate',['linear'],['get','score'],0,0,100,1],
+        'heatmap-intensity': ['interpolate',['linear'],['zoom'],0,0.6,8,2],
+        'heatmap-color': [
+          'interpolate',['linear'],['heatmap-density'],
+          0,'rgba(0,0,0,0)',
+          0.2,'rgba(91,141,184,0.5)',
+          0.4,'rgba(144,184,212,0.6)',
+          0.6,'rgba(255,217,61,0.7)',
+          0.8,'rgba(255,107,107,0.8)',
+          1,'rgba(123,104,238,0.9)'
+        ],
+        'heatmap-radius': ['interpolate',['linear'],['zoom'],0,20,8,60],
+        'heatmap-opacity': 0.7,
+      }
+    });
+
+    // Layer cerchi città
+    map.addLayer({
+      id: 'mood-circles',
+      type: 'circle',
+      source: 'cities',
+      minzoom: 1,
+      paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'],1,5,6,14,10,20],
+        'circle-color': ['get','color'],
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': 'rgba(255,255,255,0.8)',
+      }
+    });
+
+    // Layer emoji mood
+    map.addLayer({
+      id: 'mood-labels',
+      type: 'symbol',
+      source: 'cities',
+      minzoom: 3,
+      layout: {
+        'text-field': ['get','emoji'],
+        'text-size': ['interpolate',['linear'],['zoom'],3,10,6,16,10,22],
+        'text-offset': [0, -1.8],
+        'text-anchor': 'bottom',
+        'text-allow-overlap': false,
+      }
+    });
+
+    // Layer nomi città
+    map.addLayer({
+      id: 'city-names',
+      type: 'symbol',
+      source: 'cities',
+      minzoom: 4,
+      layout: {
+        'text-field': ['get','name'],
+        'text-size': ['interpolate',['linear'],['zoom'],4,9,8,13],
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+        'text-allow-overlap': false,
+        'text-font': ['Open Sans Semibold','Arial Unicode MS Bold'],
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': 'rgba(0,0,0,0.8)',
+        'text-halo-width': 1.5,
+      }
+    });
+
+    buildLegend();
+
+    // Click su città
+    map.on('click', 'mood-circles', e => {
+      const props = e.features[0].properties;
+      const city = CITIES.find(c => c.name === props.name);
+      if (city) showTip(city, e.point);
+    });
+
+    map.on('mouseenter', 'mood-circles', () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', 'mood-circles', () => map.getCanvas().style.cursor = '');
+
+    // Aggiorna dot posizione utente quando mappa si muove
+    map.on('move', updateUserDot);
+  });
+
+  // Chiudi tooltip cliccando sulla mappa
+  map.on('click', e => {
+    if (!e.features || !e.features.length) hideTip();
+  });
+}
+
+function citiesToGeoJSON() {
+  return {
+    type: 'FeatureCollection',
+    features: CITIES.map(c => ({
+      type: 'Feature',
+      geometry: {type:'Point', coordinates:[c.lng, c.lat]},
+      properties: {
+        name: c.name,
+        flag: c.f,
+        mood: c.mood,
+        color: MOOD_COLORS[c.mood] || '#90B8D4',
+        emoji: gm(c.mood).emoji,
+        score: c.score || 50,
+        summary: c.summary || '',
+        user_checkins: c.user_checkins || 0,
+      }
+    }))
+  };
+}
+
+function updateMapData() {
+  if (!map || !map.getSource('cities')) return;
+  map.getSource('cities').setData(citiesToGeoJSON());
 }
 
 // ══════════════════════════════════════════════
@@ -815,7 +644,7 @@ async function fetchCityData(city) {
   try {
     const res = await fetch(
       `${API_BASE}/.netlify/functions/citydata?city=${encodeURIComponent(city.name)}&lat=${city.lat}&lng=${city.lng}`,
-      {signal: AbortSignal.timeout(12000)}
+      {signal: AbortSignal.timeout(15000)}
     );
     if (res.ok) {
       const data = await res.json();
@@ -823,402 +652,38 @@ async function fetchCityData(city) {
       city.score = data.score || 50;
       city.summary = data.weather || '';
       city.sources = data.sources || {};
-      city.n = Math.round((data.score || 50) * 80 + 800);
       city.user_checkins = data.user_checkins || 0;
       city.user_weight = data.user_weight || 0;
       city.loaded = true;
-      // Aggiungi prima notizia al sommario
-      if (data.sources?.news?.length) {
-        city.summary += (city.summary ? ' · ' : '') + data.sources.news[0];
-      }
-    } else {
-      city.loaded = true;
-    }
-  } catch(e) {
-    city.loaded = true;
-  }
+      if (data.sources?.news?.length) city.summary += (city.summary?' · ':'')+data.sources.news[0];
+    } else { city.loaded = true; }
+  } catch(e) { city.loaded = true; }
 }
 
 async function fetchAllCities() {
-  CITIES.forEach(c => { c.loaded = false; c.mood = 'cloudy'; c.n = 0; });
-  renderCities(); drawHeat();
-  setStatus('<span class="loader"></span> Analisi news, Reddit e comunità...');
-
+  CITIES.forEach(c => { c.loaded=false; c.mood='cloudy'; c.score=50; });
+  updateMapData();
+  setStatus('<span class="loader"></span> Analisi news, meteo e comunità...');
   const BATCH = 4;
-  for (let i = 0; i < CITIES.length; i += BATCH) {
-    await Promise.all(CITIES.slice(i, i + BATCH).map(c => fetchCityData(c)));
-    renderCities(); drawHeat();
-    const done = Math.min(i + BATCH, CITIES.length);
-    setStatus(`<span class="loader"></span> ${done}/${CITIES.length} città analizzate...`);
+  for (let i=0; i<CITIES.length; i+=BATCH) {
+    await Promise.all(CITIES.slice(i,i+BATCH).map(c=>fetchCityData(c)));
+    updateMapData();
+    setStatus(`<span class="loader"></span> ${Math.min(i+BATCH,CITIES.length)}/${CITIES.length} città analizzate...`);
   }
-
-  const now = new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+  const now = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   setStatus(`<span class="live"></span> Aggiornato ${now} · Prossimo refresh tra 6h`);
-  setTimeout(fetchAllCities, 6 * 60 * 60 * 1000);
+  setTimeout(fetchAllCities, 6*60*60*1000);
 }
 
-function refreshAll() {
-  showToast('🔄 Aggiornamento in corso...');
-  fetchAllCities();
-}
-
-function setStatus(html) {
-  document.getElementById('stxt').innerHTML = html;
-}
-
-// ══════════════════════════════════════════════
-// LA MIA ZONA
-// ══════════════════════════════════════════════
-async function buildZone() {
-  const el = document.getElementById('zonecontent');
-  if (!userLat || !userLng) {
-    el.innerHTML = `
-      <div class="sc" style="text-align:center;padding:36px 20px">
-        <div style="font-size:44px;margin-bottom:14px">📍</div>
-        <div style="font-size:17px;font-weight:800;margin-bottom:8px">Posizione non disponibile</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.42);line-height:1.6;margin-bottom:16px">
-          Abilita la posizione GPS per vedere il mood<br>del tuo quartiere e della tua via
-        </div>
-        <button onclick="requestLocation()" style="padding:12px 28px;border-radius:50px;border:none;background:linear-gradient(135deg,#4D96FF,#7B68EE);color:#fff;font-size:14px;font-weight:700;cursor:pointer">
-          📍 Abilita posizione
-        </button>
-      </div>`;
-    return;
-  }
-
-  el.innerHTML = `<div class="sc" style="text-align:center;padding:24px"><span class="loader"></span> <span style="margin-left:8px;font-size:13px;color:rgba(255,255,255,.5)">Analisi zona in corso...</span></div>`;
-
-  const levels = [
-    {label:'Zona larga (~2km)', radius:0.018},
-    {label:'Quartiere (~500m)', radius:0.005},
-    {label:'Via/piazza (~100m)', radius:0.001},
-  ];
-
-  const [results, places] = await Promise.all([
-    Promise.all(levels.map(async lv => {
-      try {
-        const res = await fetch(
-          `${API_BASE}/.netlify/functions/zonaldata?lat=${userLat}&lng=${userLng}&radius=${lv.radius}`,
-          {signal: AbortSignal.timeout(8000)}
-        );
-        return res.ok ? {...lv, ...(await res.json())} : {...lv, mood:'cloudy', count:0};
-      } catch(e) { return {...lv, mood:'cloudy', count:0}; }
-    })),
-    fetchNearbyPlaces()
-  ]);
-
-  const dominantMood = gm(results[1]?.mood || 'cloudy');
-
-  el.innerHTML = `
-    <div style="text-align:center;padding:18px 0 22px">
-      <div style="font-size:54px;margin-bottom:8px">${dominantMood.emoji}</div>
-      <div style="font-size:21px;font-weight:800;color:${dominantMood.color}">${dominantMood.label}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.38);margin-top:4px">Mood del tuo quartiere ora</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.22);margin-top:4px">📍 ${userLat.toFixed(4)}, ${userLng.toFixed(4)}</div>
-    </div>
-
-    <div class="sc">
-      <div class="sc-header">Mood per distanza</div>
-      ${results.map(r => {
-        const m = gm(r.mood);
-        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-          <span style="font-size:22px">${m.emoji}</span>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:700">${r.label}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.38);margin-top:2px">
-              ${r.count > 0 ? `${r.count} check-in recenti` : 'Pochi dati — basato su news'}
-            </div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:12px;color:${m.color};font-weight:700">${m.label}</div>
-            ${r.count > 0 ? `<div style="font-size:10px;color:rgba(255,255,255,.28)">${r.count} persone</div>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-
-    ${places.length ? `
-    <div class="sc">
-      <div class="sc-header">Luoghi vicini · OpenStreetMap</div>
-      ${places.map(p => {
-        const typeEmoji = {bar:'🍺',cafe:'☕',restaurant:'🍽️',gym:'🏋️',nightclub:'🕺',cinema:'🎬',library:'📚',spa:'🧖',park:'🌿'}[p.type] || '📍';
-        const places4mood = PLACES[dominantMood.id] || PLACES.cloudy;
-        const match = places4mood.find(pl => pl.cat.toLowerCase().includes(p.type));
-        const tag = match
-          ? `<span style="padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:${TC[match.type]}22;color:${TC[match.type]};flex-shrink:0">${TL[match.type]}</span>`
-          : '';
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-          <span style="font-size:20px;flex-shrink:0">${typeEmoji}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.35)">${p.type}</div>
-          </div>
-          ${tag}
-        </div>`;
-      }).join('')}
-    </div>` : ''}
-
-    <div class="sc">
-      <div class="sc-header">Consigliato per il tuo mood</div>
-      ${(PLACES[dominantMood.id] || PLACES.cloudy).map(p => `
-        <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:flex-start">
-          <div style="flex:1">
-            <div style="font-size:10px;color:rgba(255,255,255,.32)">${p.cat}</div>
-            <div style="font-size:13px;font-weight:700">${p.name}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.3;margin-top:2px">${p.why}</div>
-          </div>
-          <span style="padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:${TC[p.type]}22;color:${TC[p.type]};white-space:nowrap;flex-shrink:0">${TL[p.type]}</span>
-        </div>`).join('')}
-    </div>`;
-}
-
-async function fetchNearbyPlaces() {
-  if (!userLat || !userLng) return [];
-  try {
-    const query = `[out:json][timeout:10];(node["amenity"~"bar|cafe|restaurant|gym|nightclub|cinema|library|spa"](${userLat-0.004},${userLng-0.006},${userLat+0.004},${userLng+0.006}););out 12;`;
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method:'POST', body:query,
-      signal: AbortSignal.timeout(9000)
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.elements || []).slice(0, 10).map(el => ({
-      name: el.tags?.name || el.tags?.amenity || 'Luogo',
-      type: el.tags?.amenity || 'place',
-      lat: el.lat, lng: el.lon
-    })).filter(p => p.name !== 'Luogo');
-  } catch(e) { return []; }
-}
-
-function requestLocation() {
-  navigator.geolocation?.getCurrentPosition(pos => {
-    userLat = pos.coords.latitude;
-    userLng = pos.coords.longitude;
-    startLocationTracking();
-    document.getElementById('loc-indicator').style.display = 'block';
-    buildZone();
-  }, () => showToast('❌ Impossibile ottenere la posizione'));
-}
-
-// ══════════════════════════════════════════════
-// MAP ENGINE
-// ══════════════════════════════════════════════
-const mwEl = () => document.getElementById('mapwrap');
-
-function setVB() {
-  document.getElementById('mapsvg').setAttribute(
-    'viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`
-  );
-  drawHeat();
-  updateUserDot();
-}
-
-function doZoom(f, cx, cy) {
-  const centerX = cx !== undefined ? cx : vb.x + vb.w / 2;
-  const centerY = cy !== undefined ? cy : vb.y + vb.h / 2;
-  vb.w = Math.min(1000, Math.max(60, vb.w / f));
-  vb.h = Math.min(500, Math.max(30, vb.h / f));
-  vb.x = Math.max(0, Math.min(1000 - vb.w, centerX - vb.w / 2));
-  vb.y = Math.max(0, Math.min(500 - vb.h, centerY - vb.h / 2));
-  setVB(); renderCities();
-}
-
-function resetView() {
-  vb = {x:0, y:0, w:1000, h:500};
-  setVB(); renderCities();
-}
-
-function svgPt(clientX, clientY) {
-  const r = mwEl().getBoundingClientRect();
-  return {
-    x: (clientX - r.left) / r.width * vb.w + vb.x,
-    y: (clientY - r.top) / r.height * vb.h + vb.y
-  };
-}
-
-function onDown(e) {
-  if (e.touches && e.touches.length === 2) return;
-  dragging = true;
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
-  dragStart = svgPt(cx, cy);
-  vbStart = {...vb};
-}
-
-function onMove(e) {
-  // Pinch zoom
-  if (e.touches && e.touches.length === 2) {
-    e.preventDefault();
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (lastTouchDist) {
-      const f = dist / lastTouchDist;
-      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      const p = svgPt(mx, my);
-      doZoom(f, p.x, p.y);
-    }
-    lastTouchDist = dist;
-    return;
-  }
-  lastTouchDist = null;
-  if (!dragging) return;
-  e.preventDefault();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
-  const p = svgPt(cx, cy);
-  vb.x = Math.max(0, Math.min(1000 - vb.w, vbStart.x - (p.x - dragStart.x)));
-  vb.y = Math.max(0, Math.min(500 - vb.h, vbStart.y - (p.y - dragStart.y)));
-  setVB();
-}
-
-function onUp() {
-  dragging = false;
-  lastTouchDist = null;
-}
-
-function onWheel(e) {
-  e.preventDefault();
-  const r = mwEl().getBoundingClientRect();
-  const p = svgPt(e.clientX, e.clientY);
-  doZoom(e.deltaY < 0 ? 1.2 : 0.83, p.x, p.y);
-}
-
-// ══════════════════════════════════════════════
-// HEATMAP
-// ══════════════════════════════════════════════
-function drawHeat() {
-  const cvs = document.getElementById('hcvs');
-  const wrap = mwEl();
-  if (!wrap || !cvs) return;
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-  if (!W || !H) return;
-  if (cvs.width !== W || cvs.height !== H) {
-    cvs.width = W; cvs.height = H;
-  }
-  const ctx = cvs.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  const realCities = CITIES.filter(c => c.loaded && c.n > 0 && c.mood !== 'cloudy');
-  if (!realCities.length) return;
-
-  const zf = 1000 / vb.w;
-  realCities.forEach(city => {
-    const m = gm(city.mood);
-    const p = ll2xy(city.lat, city.lng);
-    const sc = {
-      x: (p.x - vb.x) / vb.w * W,
-      y: (p.y - vb.y) / vb.h * H
-    };
-    // Skip if off-screen
-    if (sc.x < -200 || sc.x > W + 200 || sc.y < -200 || sc.y > H + 200) return;
-
-    const [r, g, b] = h2rgb(m.color);
-    const rad = Math.min(Math.max(city.n / 50 * zf, 20), 160);
-    const gr = ctx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, rad);
-    gr.addColorStop(0,   `rgba(${r},${g},${b},0.38)`);
-    gr.addColorStop(0.25,`rgba(${r},${g},${b},0.18)`);
-    gr.addColorStop(0.6, `rgba(${r},${g},${b},0.06)`);
-    gr.addColorStop(1,   `rgba(${r},${g},${b},0)`);
-    ctx.beginPath();
-    ctx.arc(sc.x, sc.y, rad, 0, Math.PI * 2);
-    ctx.fillStyle = gr;
-    ctx.fill();
-
-    // Dashed rings
-    [0.4, 0.65, 0.88].forEach((f, i) => {
-      ctx.beginPath();
-      ctx.arc(sc.x, sc.y, rad * f, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${r},${g},${b},${0.22 - i * 0.06})`;
-      ctx.lineWidth = 0.8;
-      ctx.setLineDash([3, 7]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    });
-  });
-}
-
-// ══════════════════════════════════════════════
-// RENDER CITY DOTS + LABELS
-// ══════════════════════════════════════════════
-function renderCities() {
-  const layer = document.getElementById('city-layer');
-  const labelLayer = document.getElementById('label-layer');
-  layer.innerHTML = '';
-  labelLayer.innerHTML = '';
-
-  const zoomLevel = 1000 / vb.w; // 1 = global, >4 = zoomed in
-  const showLabels = zoomLevel > 1.8;
-
-  CITIES.forEach(city => {
-    const m = gm(city.mood);
-    const p = ll2xy(city.lat, city.lng);
-
-    // Skip if outside viewbox (with margin)
-    if (p.x < vb.x - 20 || p.x > vb.x + vb.w + 20 ||
-        p.y < vb.y - 20 || p.y > vb.y + vb.h + 20) return;
-
-    const [rv0, rv1, rv2] = h2rgb(m.color);
-    const dotR = Math.max(2.5, Math.min(6.5, (city.n || 1200) / 800 * zoomLevel * 0.6 + 2));
-
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.style.cursor = 'pointer';
-
-    // Glow rings
-    [[dotR * 3.2, 0.08], [dotR * 2, 0.22]].forEach(([r, a]) => {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', r);
-      c.setAttribute('fill', `rgba(${rv0},${rv1},${rv2},${a})`);
-      g.appendChild(c);
-    });
-
-    // Main dot
-    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y); dot.setAttribute('r', dotR);
-    dot.setAttribute('fill', city.loaded ? m.color : '#2a4060');
-    dot.setAttribute('stroke', 'rgba(255,255,255,0.9)');
-    dot.setAttribute('stroke-width', '0.6');
-    g.appendChild(dot);
-
-    // Hit target (larger invisible circle for easier touch)
-    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    hit.setAttribute('cx', p.x); hit.setAttribute('cy', p.y); hit.setAttribute('r', Math.max(dotR + 6, 10));
-    hit.setAttribute('fill', 'transparent');
-    g.appendChild(hit);
-
-    g.addEventListener('click', e => { e.stopPropagation(); showTip(city, e); });
-    g.addEventListener('touchend', e => {
-      e.preventDefault(); e.stopPropagation();
-      showTip(city, e.changedTouches[0]);
-    });
-    layer.appendChild(g);
-
-    // City label (only when zoomed in)
-    if (showLabels) {
-      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      label.setAttribute('x', p.x);
-      label.setAttribute('y', p.y - dotR - 3);
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('font-size', Math.max(4, Math.min(8, zoomLevel * 3)));
-      label.setAttribute('fill', 'rgba(255,255,255,0.75)');
-      label.setAttribute('font-family', 'system-ui,sans-serif');
-      label.setAttribute('font-weight', '600');
-      label.setAttribute('pointer-events', 'none');
-      label.textContent = city.name;
-      labelLayer.appendChild(label);
-    }
-  });
-}
+function refreshAll() { showToast('🔄 Aggiornamento...'); fetchAllCities(); }
 
 // ══════════════════════════════════════════════
 // TOOLTIP
 // ══════════════════════════════════════════════
-function showTip(city, e) {
+function showTip(city, point) {
   const m = gm(city.mood);
   const places = PLACES[city.mood] || PLACES.cloudy;
-
-  const phtml = places.map(p => `
+  const phtml = places.map(p=>`
     <div style="padding:6px 0;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;align-items:flex-start">
       <div style="flex:1;min-width:0">
         <div style="font-size:10px;color:rgba(255,255,255,.3)">${p.cat}</div>
@@ -1227,149 +692,107 @@ function showTip(city, e) {
       </div>
       <span style="padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;background:${TC[p.type]}22;color:${TC[p.type]}">${TL[p.type]}</span>
     </div>`).join('');
-
-  const newsHtml = (city.sources?.news || []).slice(0, 2).map(n =>
-    `<div style="font-size:10px;color:rgba(255,255,255,.42);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">📰 ${n}</div>`
-  ).join('');
-  const redditHtml = (city.sources?.reddit || []).slice(0, 2).map(r =>
-    `<div style="font-size:10px;color:rgba(255,255,255,.42);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">🗣️ ${r}</div>`
-  ).join('');
+  const newsHtml = (city.sources?.news||[]).slice(0,2).map(n=>`<div style="font-size:10px;color:rgba(255,255,255,.42);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)">📰 ${n}</div>`).join('');
 
   const tip = document.getElementById('tip');
   tip.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
         <div style="font-size:16px;font-weight:800">${city.f} ${city.name}</div>
-        <div style="font-size:13px;font-weight:600;color:${m.color};margin-top:2px">
-          ${m.emoji} ${m.label}
-          ${city.score ? `<span style="font-size:10px;color:rgba(255,255,255,.28);font-weight:400;margin-left:4px">score ${city.score}</span>` : ''}
-        </div>
+        <div style="font-size:13px;font-weight:600;color:${m.color};margin-top:2px">${m.emoji} ${m.label} <span style="font-size:10px;color:rgba(255,255,255,.28);font-weight:400">score ${city.score}</span></div>
       </div>
-      <button onclick="hideTip()" style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center">×</button>
+      <button onclick="hideTip()" style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
     </div>
-    ${city.user_checkins > 0
-      ? `<div style="font-size:11px;color:rgba(77,150,255,.85);margin-bottom:6px">👥 ${city.user_checkins} check-in · peso utenti ${city.user_weight}%</div>`
-      : ''}
-    ${city.summary
-      ? `<div style="font-size:11px;color:rgba(255,255,255,.52);line-height:1.5;margin-bottom:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid ${m.color}44">${city.summary}</div>`
-      : ''}
-    ${(newsHtml || redditHtml)
-      ? `<div style="margin-bottom:8px">${newsHtml}${redditHtml}</div>`
-      : ''}
+    ${city.user_checkins>0?`<div style="font-size:11px;color:rgba(77,150,255,.85);margin-bottom:6px">👥 ${city.user_checkins} check-in · peso ${city.user_weight}%</div>`:''}
+    ${city.summary?`<div style="font-size:11px;color:rgba(255,255,255,.52);line-height:1.5;margin-bottom:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid ${m.color}44">${city.summary}</div>`:''}
+    ${newsHtml?`<div style="margin-bottom:8px">${newsHtml}</div>`:''}
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.25);margin-bottom:2px">Dove andare</div>
     ${phtml}`;
 
-  const wrap = mwEl().getBoundingClientRect();
-  const cx = (e.clientX || e.pageX) - wrap.left;
-  const cy = (e.clientY || e.pageY) - wrap.top;
   tip.style.display = 'block';
-
-  // Smart positioning
-  const tipW = Math.min(300, wrap.width * 0.88);
-  const tipH = Math.min(400, wrap.height * 0.75);
-  let left = cx + 14;
-  let top = cy + 14;
-  if (left + tipW > wrap.width - 10) left = cx - tipW - 10;
-  if (top + tipH > wrap.height - 10) top = cy - tipH - 10;
-  tip.style.left = Math.max(8, left) + 'px';
-  tip.style.top = Math.max(8, top) + 'px';
+  const wrap = document.getElementById('mapwrap').getBoundingClientRect();
+  const tipW = 290, tipH = 380;
+  let left = point.x + 14, top = point.y + 14;
+  if (left+tipW > wrap.width-10) left = point.x-tipW-10;
+  if (top+tipH > wrap.height-10) top = point.y-tipH-10;
+  tip.style.left = Math.max(8,left)+'px';
+  tip.style.top = Math.max(8,top)+'px';
 }
 
-function hideTip() {
-  document.getElementById('tip').style.display = 'none';
-}
+function hideTip() { document.getElementById('tip').style.display='none'; }
 
 // ══════════════════════════════════════════════
-// INIT MAP
+// LEGEND
 // ══════════════════════════════════════════════
-function initMap() {
-  renderCities(); drawHeat(); buildLegend();
-  const w = mwEl();
-  w.addEventListener('mousedown', onDown);
-  w.addEventListener('mousemove', onMove);
-  w.addEventListener('mouseup', onUp);
-  w.addEventListener('mouseleave', onUp);
-  w.addEventListener('touchstart', onDown, {passive:true});
-  w.addEventListener('touchmove', onMove, {passive:false});
-  w.addEventListener('touchend', onUp);
-  w.addEventListener('wheel', onWheel, {passive:false});
-  w.addEventListener('click', e => {
-    if (e.target === w || e.target.id === 'mapsvg' || e.target.tagName === 'rect') hideTip();
-  });
-  window.addEventListener('resize', () => { drawHeat(); updateUserDot(); });
-}
-
 function buildLegend() {
   document.getElementById('leg').innerHTML =
     `<div style="font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:rgba(255,255,255,.28);margin-bottom:8px;font-weight:700">Clima emotivo</div>` +
-    MOODS.map(m =>
-      `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:11px">
-        <div style="width:8px;height:8px;border-radius:50%;background:${m.color};flex-shrink:0"></div>
-        ${m.emoji} ${m.label}
-      </div>`
-    ).join('');
+    MOODS.map(m=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:11px"><div style="width:8px;height:8px;border-radius:50%;background:${m.color};flex-shrink:0"></div>${m.emoji} ${m.label}</div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// LA MIA ZONA
+// ══════════════════════════════════════════════
+async function buildZone() {
+  const el = document.getElementById('zonecontent');
+  if (!userLat||!userLng) {
+    el.innerHTML=`<div class="sc" style="text-align:center;padding:36px 20px"><div style="font-size:44px;margin-bottom:14px">📍</div><div style="font-size:17px;font-weight:800;margin-bottom:8px">Posizione non disponibile</div><div style="font-size:13px;color:rgba(255,255,255,.42);line-height:1.6;margin-bottom:16px">Abilita la posizione GPS per vedere il mood del tuo quartiere</div><button onclick="requestLocation()" style="padding:12px 28px;border-radius:50px;border:none;background:linear-gradient(135deg,#4D96FF,#7B68EE);color:#fff;font-size:14px;font-weight:700;cursor:pointer">📍 Abilita posizione</button></div>`;
+    return;
+  }
+  el.innerHTML=`<div class="sc" style="text-align:center;padding:24px"><span class="loader"></span> <span style="margin-left:8px;font-size:13px;color:rgba(255,255,255,.5)">Analisi zona...</span></div>`;
+  const levels=[{label:'Zona larga (~2km)',radius:0.018},{label:'Quartiere (~500m)',radius:0.005},{label:'Via/piazza (~100m)',radius:0.001}];
+  const results = await Promise.all(levels.map(async lv=>{
+    try {
+      const res=await fetch(`${API_BASE}/.netlify/functions/zonaldata?lat=${userLat}&lng=${userLng}&radius=${lv.radius}`,{signal:AbortSignal.timeout(8000)});
+      return res.ok?{...lv,...(await res.json())}:{...lv,mood:'cloudy',count:0};
+    } catch(e){return{...lv,mood:'cloudy',count:0};}
+  }));
+  const dominantMood = gm(results[1]?.mood||'cloudy');
+  el.innerHTML=`
+    <div style="text-align:center;padding:18px 0 22px">
+      <div style="font-size:54px;margin-bottom:8px">${dominantMood.emoji}</div>
+      <div style="font-size:21px;font-weight:800;color:${dominantMood.color}">${dominantMood.label}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.38);margin-top:4px">Mood del tuo quartiere ora</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.22);margin-top:4px">📍 ${userLat.toFixed(4)}, ${userLng.toFixed(4)}</div>
+    </div>
+    <div class="sc">
+      <div class="sc-header">Mood per distanza</div>
+      ${results.map(r=>{const m=gm(r.mood);return`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:22px">${m.emoji}</span><div style="flex:1"><div style="font-size:13px;font-weight:700">${r.label}</div><div style="font-size:11px;color:rgba(255,255,255,.38);margin-top:2px">${r.count>0?`${r.count} check-in recenti`:'Pochi dati'}</div></div><div style="font-size:12px;color:${m.color};font-weight:700">${m.label}</div></div>`;}).join('')}
+    </div>
+    <div class="sc">
+      <div class="sc-header">Consigliato per te ora</div>
+      ${(PLACES[dominantMood.id]||PLACES.cloudy).map(p=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:flex-start"><div style="flex:1"><div style="font-size:10px;color:rgba(255,255,255,.32)">${p.cat}</div><div style="font-size:13px;font-weight:700">${p.name}</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">${p.why}</div></div><span style="padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;background:${TC[p.type]}22;color:${TC[p.type]};white-space:nowrap;flex-shrink:0">${TL[p.type]}</span></div>`).join('')}
+    </div>`;
+}
+
+function requestLocation() {
+  navigator.geolocation?.getCurrentPosition(pos=>{
+    userLat=pos.coords.latitude; userLng=pos.coords.longitude;
+    startLocationTracking();
+    document.getElementById('loc-indicator').style.display='block';
+    buildZone();
+  },()=>showToast('❌ Impossibile ottenere la posizione'));
 }
 
 // ══════════════════════════════════════════════
 // STATS
 // ══════════════════════════════════════════════
 function buildStats() {
-  const sw = document.getElementById('swrap');
-  const loaded = CITIES.filter(c => c.loaded);
-  const mc = MOODS.map(m => ({
-    ...m, cnt: loaded.filter(c => c.mood === m.id).length
-  })).sort((a, b) => b.cnt - a.cnt);
-
-  const totalCheckins = loaded.reduce((s, c) => s + (c.user_checkins || 0), 0);
-
-  sw.innerHTML = `
+  const sw=document.getElementById('swrap');
+  const loaded=CITIES.filter(c=>c.loaded);
+  const mc=MOODS.map(m=>({...m,cnt:loaded.filter(c=>c.mood===m.id).length})).sort((a,b)=>b.cnt-a.cnt);
+  sw.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div class="sc">
-        <div class="sc-header" style="margin-bottom:5px">Città monitorate</div>
-        <div style="font-size:28px;font-weight:900">${loaded.length}</div>
-        <div style="font-size:11px;color:#4D96FF;margin-top:3px">su ${CITIES.length} totali</div>
-      </div>
-      <div class="sc">
-        <div class="sc-header" style="margin-bottom:5px">Mood globale</div>
-        <div style="font-size:28px;font-weight:900">${mc[0]?.emoji || '⛅'}</div>
-        <div style="font-size:11px;color:${mc[0]?.color || '#90B8D4'};margin-top:3px">${mc[0]?.label || '...'}</div>
-      </div>
+      <div class="sc"><div class="sc-header" style="margin-bottom:5px">Città monitorate</div><div style="font-size:28px;font-weight:900">${loaded.length}</div><div style="font-size:11px;color:#4D96FF;margin-top:3px">su ${CITIES.length} totali</div></div>
+      <div class="sc"><div class="sc-header" style="margin-bottom:5px">Mood globale</div><div style="font-size:28px;font-weight:900">${mc[0]?.emoji||'⛅'}</div><div style="font-size:11px;color:${mc[0]?.color||'#90B8D4'};margin-top:3px">${mc[0]?.label||'...'}</div></div>
     </div>
-    ${totalCheckins > 0 ? `
-    <div class="sc" style="margin-bottom:12px;text-align:center">
-      <div class="sc-header">Community</div>
-      <div style="font-size:28px;font-weight:900">${totalCheckins}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">check-in totali dalla community</div>
-    </div>` : ''}
     <div class="sc" style="margin-bottom:12px">
       <div class="sc-header">Distribuzione globale</div>
-      ${mc.map(m => `
-        <div style="margin-bottom:11px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <span style="font-size:13px;font-weight:600">${m.emoji} ${m.label}</span>
-            <span style="font-size:13px;color:${m.color};font-weight:700">${m.cnt} città</span>
-          </div>
-          <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden">
-            <div style="height:100%;width:${loaded.length ? m.cnt / loaded.length * 100 : 0}%;background:${m.color};border-radius:3px;transition:width .5s ease"></div>
-          </div>
-        </div>`).join('')}
+      ${mc.map(m=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:13px;font-weight:600">${m.emoji} ${m.label}</span><span style="font-size:13px;color:${m.color};font-weight:700">${m.cnt} città</span></div><div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${loaded.length?m.cnt/loaded.length*100:0}%;background:${m.color};border-radius:3px;transition:width .5s"></div></div></div>`).join('')}
     </div>
     <div class="sc">
       <div class="sc-header">Tutte le città</div>
-      ${CITIES.map(c => {
-        const m = gm(c.mood);
-        return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-          <span style="font-size:15px;flex-shrink:0">${c.f}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:700">${c.name}</div>
-            ${c.user_checkins > 0 ? `<div style="font-size:10px;color:rgba(77,150,255,.65)">👥 ${c.user_checkins}</div>` : ''}
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:16px">${m.emoji}</div>
-            ${c.score ? `<div style="font-size:10px;color:rgba(255,255,255,.28)">${c.score}</div>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
+      ${CITIES.map(c=>{const m=gm(c.mood);return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:15px;flex-shrink:0">${c.f}</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">${c.name}</div>${c.user_checkins>0?`<div style="font-size:10px;color:rgba(77,150,255,.65)">👥 ${c.user_checkins}</div>`:''}</div><div style="text-align:right"><div style="font-size:16px">${m.emoji}</div>${c.score?`<div style="font-size:10px;color:rgba(255,255,255,.28)">${c.score}</div>`:''}</div></div>`;}).join('')}
     </div>`;
 }
 
@@ -1377,86 +800,38 @@ function buildStats() {
 // MY MOOD
 // ══════════════════════════════════════════════
 function buildMe() {
-  const m = gm(userMood || 'cloudy');
-  const h = JSON.parse(localStorage.getItem('mood_history') || '[]');
-  const streak = calcStreak(h);
-  const freq = {};
-  h.forEach(e => { freq[e.mood] = (freq[e.mood] || 0) + 1; });
-  const topMoods = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 3);
-
-  // Weekly summary (last 7 days)
-  const last7 = h.slice(0, 7);
-  const avgScore = last7.length
-    ? last7.reduce((s, e) => s + ({rainbow:100,sunny:70,cloudy:0,rainy:-30,snowy:-60,stormy:-80}[e.mood] || 0), 0) / last7.length
-    : null;
-  const weekTrend = avgScore === null ? '' : avgScore > 30 ? '📈 Settimana positiva' : avgScore < -20 ? '📉 Settimana difficile' : '➡️ Settimana nella media';
-
-  document.getElementById('mecontent').innerHTML = `
+  const m=gm(userMood||'cloudy');
+  const h=JSON.parse(localStorage.getItem('mood_history')||'[]');
+  const streak=calcStreak(h);
+  const freq={};
+  h.forEach(e=>{freq[e.mood]=(freq[e.mood]||0)+1;});
+  const topMoods=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  document.getElementById('mecontent').innerHTML=`
     <div style="text-align:center;padding:22px 0 26px">
-      <div style="font-size:68px;margin-bottom:8px;filter:drop-shadow(0 4px 16px ${m.color}44)">${m.emoji}</div>
+      <div style="font-size:68px;margin-bottom:8px">${m.emoji}</div>
       <div style="font-size:22px;font-weight:800;color:${m.color}">${m.label}</div>
       <div style="font-size:12px;color:rgba(255,255,255,.38);margin-top:4px">Il tuo mood di oggi</div>
-      ${weekTrend ? `<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:6px">${weekTrend}</div>` : ''}
-      <button onclick="showCheckinGate(true)" style="margin-top:14px;padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.55);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s">
-        🔄 Aggiorna mood
-      </button>
+      <button onclick="showCheckinGate(true)" style="margin-top:14px;padding:8px 20px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.55);cursor:pointer;font-size:12px;font-weight:600">🔄 Aggiorna mood</button>
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div class="sc" style="text-align:center">
-        <div class="sc-header" style="margin-bottom:6px">Streak 🔥</div>
-        <div style="font-size:34px;font-weight:900">${streak}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.32);margin-top:3px">giorni di fila</div>
-      </div>
-      <div class="sc" style="text-align:center">
-        <div class="sc-header" style="margin-bottom:6px">Check-in totali</div>
-        <div style="font-size:34px;font-weight:900">${h.length}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.32);margin-top:3px">dal primo giorno</div>
-      </div>
+      <div class="sc" style="text-align:center"><div class="sc-header" style="margin-bottom:6px">Streak 🔥</div><div style="font-size:34px;font-weight:900">${streak}</div><div style="font-size:11px;color:rgba(255,255,255,.32);margin-top:3px">giorni di fila</div></div>
+      <div class="sc" style="text-align:center"><div class="sc-header" style="margin-bottom:6px">Check-in totali</div><div style="font-size:34px;font-weight:900">${h.length}</div><div style="font-size:11px;color:rgba(255,255,255,.32);margin-top:3px">dal primo giorno</div></div>
     </div>
-
     <div class="sc" style="margin-bottom:12px">
       <div class="sc-header">Ultimi 14 giorni</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
-        ${h.slice(0, 14).map(e => {
-          const hm = gm(e.mood);
-          const d = new Date(e.date);
-          return `<div style="text-align:center;padding:4px 2px">
-            <div style="font-size:22px">${hm.emoji}</div>
-            <div style="font-size:9px;color:rgba(255,255,255,.28);margin-top:2px">${d.getDate()}/${d.getMonth()+1}</div>
-          </div>`;
-        }).join('') || '<div style="font-size:13px;color:rgba(255,255,255,.28)">Inizia il tuo check-in!</div>'}
+        ${h.slice(0,14).map(e=>{const hm=gm(e.mood);const d=new Date(e.date);return`<div style="text-align:center;padding:4px 2px"><div style="font-size:22px">${hm.emoji}</div><div style="font-size:9px;color:rgba(255,255,255,.28);margin-top:2px">${d.getDate()}/${d.getMonth()+1}</div></div>`;}).join('')||'<div style="font-size:13px;color:rgba(255,255,255,.28)">Inizia il tuo check-in!</div>'}
       </div>
     </div>
-
-    ${topMoods.length ? `
-    <div class="sc">
-      <div class="sc-header">Mood più frequenti</div>
-      ${topMoods.map(([id, cnt]) => {
-        const mm = gm(id);
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span style="font-size:24px">${mm.emoji}</span>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:700">${mm.label}</div>
-            <div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:5px">
-              <div style="height:100%;width:${(cnt/h.length)*100}%;background:${mm.color};border-radius:2px;transition:width .5s"></div>
-            </div>
-          </div>
-          <span style="font-size:12px;color:${mm.color};font-weight:700;min-width:28px;text-align:right">${cnt}x</span>
-        </div>`;
-      }).join('')}
-    </div>` : ''}`;
+    ${topMoods.length?`<div class="sc"><div class="sc-header">Mood più frequenti</div>${topMoods.map(([id,cnt])=>{const mm=gm(id);return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:24px">${mm.emoji}</span><div style="flex:1"><div style="font-size:13px;font-weight:700">${mm.label}</div><div style="height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${(cnt/h.length)*100}%;background:${mm.color};border-radius:2px"></div></div></div><span style="font-size:12px;color:${mm.color};font-weight:700;min-width:28px;text-align:right">${cnt}x</span></div>`;}).join('')}</div>`:''}`;
 }
 
 function calcStreak(h) {
   if (!h.length) return 0;
-  let streak = 1;
-  let prev = new Date(h[0].date);
-  for (let i = 1; i < h.length; i++) {
-    const d = new Date(h[i].date);
-    const diff = (prev - d) / (1000 * 60 * 60 * 24);
-    if (diff >= 1 && diff < 2) { streak++; prev = d; }
-    else break;
+  let streak=1, prev=new Date(h[0].date);
+  for (let i=1;i<h.length;i++) {
+    const d=new Date(h[i].date), diff=(prev-d)/(1000*60*60*24);
+    if (diff>=1&&diff<2){streak++;prev=d;}else break;
   }
   return streak;
 }
