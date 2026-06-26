@@ -1,0 +1,13 @@
+{
+  "name": "meteomood-backend-milano",
+  "version": "1.0.0",
+  "description": "MeteoMood backend pilot — sentiment analysis per Milano",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
