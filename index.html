@@ -709,17 +709,46 @@ function initMap(){
     });
 
     buildLegend();
-    map.on('move',updateUserDot);
+    map.on('move', updateUserDot);
 
-    // Click
-    map.on('click','mood-dots',e=>{
-      const props=e.features[0].properties;
-      const city=CITIES.find(c=>c.name===props.name);
-      if(city)showTip(city,e.point);
+    // ── CLICK / TOUCH su città ──
+    // Gestione unificata click + touch per Android
+    ['mood-dots', 'mood-glow', 'mood-emoji'].forEach(layer => {
+      map.on('click', layer, e => {
+        e.preventDefault();
+        const props = e.features[0].properties;
+        const city = CITIES.find(c => c.name === props.name);
+        if (city) showTip(city, e.point);
+      });
     });
-    map.on('mouseenter','mood-dots',()=>map.getCanvas().style.cursor='pointer');
-    map.on('mouseleave','mood-dots',()=>map.getCanvas().style.cursor='');
-    map.on('click',e=>{if(!e.defaultPrevented)hideTip();});
+
+    map.on('mouseenter', 'mood-dots', () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', 'mood-dots', () => map.getCanvas().style.cursor = '');
+
+    // Chiudi tooltip cliccando fuori
+    map.on('click', e => {
+      const fs = map.queryRenderedFeatures(e.point, {layers: ['mood-dots','mood-glow','mood-emoji']});
+      if (!fs.length) hideTip();
+    });
+
+    // Touch su mobile — aumenta la hit area
+    map.getCanvas().addEventListener('touchend', e => {
+      if (e.touches.length > 0) return; // ignora multi-touch
+      const touch = e.changedTouches[0];
+      const rect = map.getCanvas().getBoundingClientRect();
+      const point = {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+      // Cerca feature in un'area più grande (30px) per facilitare il tap
+      const bbox = [[point.x - 20, point.y - 20], [point.x + 20, point.y + 20]];
+      const features = map.queryRenderedFeatures(bbox, {layers: ['mood-dots','mood-glow']});
+      if (features.length) {
+        const props = features[0].properties;
+        const city = CITIES.find(c => c.name === props.name);
+        if (city) showTip(city, point);
+      }
+    }, {passive: true});
   });
 }
 
@@ -751,13 +780,77 @@ function updateMapData(){
 }
 
 // ══════════════════════════════════════════════
+// MILANO DATA — quartieri e locali
+// ══════════════════════════════════════════════
+const MILANO_DATA = {
+  quartieri: [
+    {name:'Navigli', emoji:'🛶', vibe:'Bohémien e movida', mood:'rainbow', desc:'Aperitivo e vita notturna lungo i canali'},
+    {name:'Brera', emoji:'🎨', vibe:'Arte e moda', mood:'sunny', desc:'Gallerie, boutique e caffè letterari'},
+    {name:'Porta Romana', emoji:'🌿', vibe:'Tranquillo e residenziale', mood:'cloudy', desc:'Quartiere autentico, meno turistico'},
+    {name:'Isola', emoji:'✨', vibe:'Hipster e creativo', mood:'sunny', desc:'Street art, locali alternativi e design'},
+    {name:'Duomo', emoji:'⛪', vibe:'Turismo e shopping', mood:'cloudy', desc:'Centro storico, sempre affollato'},
+    {name:'Porta Venezia', emoji:'🌈', vibe:'Vivace e inclusivo', mood:'rainbow', desc:'Quartiere multiculturale e LGBT-friendly'},
+    {name:'Porta Nuova', emoji:'🏙️', vibe:'Business e moderno', mood:'cloudy', desc:'Grattacieli, startup e coworking'},
+    {name:'NoLo', emoji:'🎸', vibe:'Underground e autentico', mood:'sunny', desc:'Il nuovo quartiere hipster di Milano'},
+  ],
+  locali: [
+    {name:'Mag Cafè', zona:'Navigli', tipo:'🍹 Cocktail bar', why:'Atmosfera rilassata sul naviglio', mood:'rainbow'},
+    {name:'Trippa', zona:'Porta Romana', tipo:'🍽️ Ristorante', why:'Cucina milanese autentica', mood:'sunny'},
+    {name:'Taglio', zona:'Brera', tipo:'☕ Cafè & wine', why:'Design raffinato, ottimi vini', mood:'sunny'},
+    {name:'Rita', zona:'Navigli', tipo:'🕺 Cocktail lounge', why:'Aperitivo iconico di Milano', mood:'rainbow'},
+    {name:'Botanical Club', zona:'Isola', tipo:'🌿 Cocktail bar', why:'Gin e verde, molto trendy', mood:'sunny'},
+    {name:'Pavè', zona:'Porta Venezia', tipo:'🥐 Bakery & cafè', why:'Brunch perfetto la domenica', mood:'sunny'},
+  ],
+  strade: [
+    {name:'Via Tortona', vibe:'Design district', emoji:'🎭'},
+    {name:'Corso Como', vibe:'Nightlife e moda', emoji:'👗'},
+    {name:'Via Solferino', vibe:'Librerie e caffè', emoji:'📚'},
+    {name:'Ripa di Porta Ticinese', vibe:'Navigli aperitivo', emoji:'🌅'},
+  ],
+};
+
+// ══════════════════════════════════════════════
 // TOOLTIP
 // ══════════════════════════════════════════════
-function showTip(city,point){
-  const m=gm(city.mood);
-  const places=PLACES[city.mood]||PLACES.cloudy;
+function showTip(city, point) {
+  const m = gm(city.mood);
+  const places = PLACES[city.mood] || PLACES.cloudy;
+  const isMilano = city.pilot;
 
-  const phtml=places.map(p=>`
+  const newsHtml = (city.sources?.news || []).slice(0,2).map(n =>
+    `<div style="font-size:10px;color:rgba(255,255,255,.4);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.4">📰 ${n}</div>`
+  ).join('');
+
+  const redditHtml = (city.sources?.reddit || []).slice(0,2).map(r =>
+    `<div style="font-size:10px;color:rgba(255,255,255,.4);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.4">🗣️ ${r}</div>`
+  ).join('');
+
+  // Sezione Milano speciale
+  const milanoSection = isMilano ? `
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:rgba(107,203,119,.6);margin-bottom:8px;font-weight:700">📍 Quartieri ora</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${MILANO_DATA.quartieri.slice(0,4).map(q => {
+          const qm = gm(q.mood);
+          return `<div style="padding:5px 8px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08);cursor:pointer" onclick="showQuartiere('${q.name}')">
+            <div style="font-size:11px;font-weight:700">${q.emoji} ${q.name}</div>
+            <div style="font-size:10px;color:${qm.color};margin-top:1px">${qm.emoji} ${qm.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:rgba(107,203,119,.6);margin-bottom:8px;font-weight:700">🍹 Locali consigliati ora</div>
+      ${MILANO_DATA.locali.filter(l => gm(l.mood).id === city.mood || true).slice(0,3).map(l => `
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700">${l.name}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.35)">${l.tipo} · ${l.zona}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:1px">${l.why}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const phtml = places.map(p => `
     <div class="place-row">
       <div style="flex:1;min-width:0">
         <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:2px">${p.cat}</div>
@@ -767,57 +860,67 @@ function showTip(city,point){
       <span class="place-tag" style="background:${TC[p.type]}18;color:${TC[p.type]}">${TL[p.type]}</span>
     </div>`).join('');
 
-  const newsHtml=(city.sources?.news||[]).slice(0,2).map(n=>
-    `<div style="font-size:10px;color:rgba(255,255,255,.4);padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.4">📰 ${n}</div>`
-  ).join('');
-
-  const tip=document.getElementById('tip');
-  tip.innerHTML=`
+  const tip = document.getElementById('tip');
+  tip.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
       <div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span style="font-size:18px">${city.f}</span>
           <span style="font-size:17px;font-weight:800">${city.name}</span>
-          ${city.pilot?'<span class="pilot-badge">⭐ Pilota</span>':''}
+          ${city.pilot ? '<span class="pilot-badge">⭐ Pilota</span>' : ''}
         </div>
-        <div style="font-size:14px;font-weight:700;color:${m.color}">${m.emoji} ${m.label}</div>
+        <div style="font-size:15px;font-weight:700;color:${m.color}">${m.emoji} ${m.label}</div>
         <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px">Score emotivo: ${city.score}/100</div>
       </div>
-      <button onclick="hideTip()" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      <button onclick="hideTip()" style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-appearance:none">×</button>
     </div>
 
-    ${city.user_checkins>0?`
-    <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(77,150,255,.08);border-radius:10px;border:1px solid rgba(77,150,255,.15);margin-bottom:10px">
-      <span style="font-size:14px">👥</span>
+    ${city.user_checkins > 0 ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(77,150,255,.08);border-radius:10px;border:1px solid rgba(77,150,255,.15);margin-bottom:10px">
+      <span style="font-size:16px">👥</span>
       <div>
         <div style="font-size:12px;font-weight:700;color:#4D96FF">${city.user_checkins} persone hanno fatto check-in</div>
         <div style="font-size:10px;color:rgba(77,150,255,.6)">Peso community: ${city.user_weight}%</div>
       </div>
-    </div>`:''}
+    </div>` : ''}
 
-    ${city.summary?`
+    ${city.summary ? `
     <div style="padding:10px 12px;background:rgba(255,255,255,.04);border-radius:12px;border-left:3px solid ${m.color};margin-bottom:10px">
       <div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.5">${city.summary}</div>
-    </div>`:''}
+    </div>` : ''}
 
-    ${newsHtml?`<div style="margin-bottom:10px">${newsHtml}</div>`:''}
+    ${(newsHtml || redditHtml) ? `<div style="margin-bottom:10px">${newsHtml}${redditHtml}</div>` : ''}
+
+    ${milanoSection}
 
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:rgba(255,255,255,.22);margin-bottom:6px;font-weight:700">Dove andare ora</div>
     ${phtml}`;
 
-  tip.style.display='block';
-  const wrap=document.getElementById('mapwrap').getBoundingClientRect();
-  const tipW=300, tipH=420;
-  let left=point.x+16, top=point.y+16;
-  if(left+tipW>wrap.width-8)left=point.x-tipW-12;
-  if(top+tipH>wrap.height-8)top=point.y-tipH-12;
-  tip.style.left=Math.max(8,left)+'px';
-  tip.style.top=Math.max(8,top)+'px';
+  tip.style.display = 'block';
+  tip.onclick = e => e.stopPropagation();
 
-  // Prevent map click from closing
-  tip.onclick=e=>e.stopPropagation();
+  // Posizionamento smart
+  const wrap = document.getElementById('mapwrap').getBoundingClientRect();
+  const tipW = 300;
+  let left = point.x + 16;
+  let top = point.y + 16;
+  if (left + tipW > wrap.width - 8) left = point.x - tipW - 12;
+  if (top + 500 > wrap.height - 8) top = Math.max(8, wrap.height - 520);
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top = Math.max(8, top) + 'px';
 }
-function hideTip(){document.getElementById('tip').style.display='none';}
+
+function hideTip() {
+  document.getElementById('tip').style.display = 'none';
+}
+
+// Mostra dettaglio quartiere
+function showQuartiere(nome) {
+  const q = MILANO_DATA.quartieri.find(x => x.name === nome);
+  if (!q) return;
+  const qm = gm(q.mood);
+  showToast(`${q.emoji} ${q.name} — ${qm.emoji} ${qm.label}`);
+}
 
 // ══════════════════════════════════════════════
 // LEGEND
