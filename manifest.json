@@ -1,0 +1,36 @@
+{
+  "name": "MeteoMood",
+  "short_name": "MeteoMood",
+  "description": "Il meteo degli stati d'animo. Mood reale dalle città del mondo.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D1B2A",
+  "theme_color": "#0D1B2A",
+  "orientation": "portrait",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["lifestyle", "social", "weather"],
+  "shortcuts": [
+    {
+      "name": "Check-in mood",
+      "short_name": "Check-in",
+      "description": "Registra il tuo mood",
+      "url": "/?action=checkin",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
